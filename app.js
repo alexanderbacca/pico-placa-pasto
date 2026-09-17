@@ -1,6 +1,7 @@
 const storageKey = 'picoPlacaLastDigit';
 const millisecondsPerDay = 24 * 60 * 60 * 1000;
 const anchorDate = new Date(2026, 8, 21);
+const supportEndDate = new Date(2026, 11, 31);
 
 const restrictionCycles = [
   [[8, 9], [0, 1], [2, 3], [4, 5], [6, 7]],
@@ -27,10 +28,12 @@ const selectedDigitDisplay = document.getElementById('selected-digit-display');
 const resultMessage = document.getElementById('result-message');
 const nextRestrictionMessage = document.getElementById('next-restriction-message');
 const listenStatusButton = document.getElementById('listen-status-btn');
+const addCalendarButton = document.getElementById('add-calendar-btn');
 const changePlateButton = document.getElementById('change-plate-btn');
 
 let currentSpeechText = '';
 let hasUserInteracted = false;
+let currentNextRestrictionDate = null;
 
 function getLocalStartOfDay(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -85,7 +88,7 @@ function findNextRestrictionDate(digit, startDate) {
   const candidateDate = getLocalStartOfDay(startDate);
   candidateDate.setDate(candidateDate.getDate() + 1);
 
-  for (let dayOffset = 0; dayOffset < 42; dayOffset += 1) {
+  while (candidateDate <= supportEndDate) {
     if (isPlateRestrictedOnDate(digit, candidateDate)) {
       return new Date(candidateDate);
     }
@@ -113,12 +116,28 @@ function formatDateInSpanish(date, includeYear = false) {
 }
 
 function buildStatus(digit, date = new Date()) {
+  const today = getLocalStartOfDay(date);
+
+  if (today > supportEndDate) {
+    return {
+      isRestricted: false,
+      isOutOfRange: true,
+      message: 'Calendario no disponible.',
+      details: 'Esta app solo tiene datos verificados de Pico y Placa hasta el 31 de diciembre de 2026. Pídele a Alexander que actualice el calendario de restricciones.',
+      speechText: 'Esta aplicación solo tiene datos hasta el 31 de diciembre de 2026. Pídele a Alexander que la actualice.',
+      nextRestrictionDate: null
+    };
+  }
+
+  const nextDate = findNextRestrictionDate(digit, date);
+
   if (isCarFreeDay(date)) {
     return {
       isRestricted: true,
       message: 'Día sin carro ni moto.',
       details: 'La restricción aplica para todos los dígitos de placa.',
-      speechText: 'Hoy es Día sin carro ni moto.'
+      speechText: 'Hoy es Día sin carro ni moto.',
+      nextRestrictionDate: nextDate
     };
   }
 
@@ -127,18 +146,18 @@ function buildStatus(digit, date = new Date()) {
       isRestricted: true,
       message: 'Hoy tienes pico y placa.',
       details: 'No olvides verificar los horarios oficiales vigentes.',
-      speechText: 'Hoy es tu día de pico y placa.'
+      speechText: 'Hoy es tu día de pico y placa.',
+      nextRestrictionDate: nextDate
     };
   }
-
-  const nextDate = findNextRestrictionDate(digit, date);
 
   if (!nextDate) {
     return {
       isRestricted: false,
       message: 'Hoy no tienes pico y placa.',
       details: '',
-      speechText: 'Hoy no tienes pico y placa.'
+      speechText: 'Hoy no tienes pico y placa.',
+      nextRestrictionDate: null
     };
   }
 
@@ -149,7 +168,8 @@ function buildStatus(digit, date = new Date()) {
       isRestricted: false,
       message: 'Hoy no tienes pico y placa.',
       details: `El próximo ${formattedDateWithYear} habrá "Día sin carro ni moto" y tampoco podrás circular ese día.`,
-      speechText: `El próximo ${formattedDateWithYear} habrá Día sin carro ni moto.`
+      speechText: `El próximo ${formattedDateWithYear} habrá Día sin carro ni moto.`,
+      nextRestrictionDate: nextDate
     };
   }
 
@@ -157,7 +177,8 @@ function buildStatus(digit, date = new Date()) {
     isRestricted: false,
     message: 'Hoy no tienes pico y placa.',
     details: `Tu próximo día de pico y placa es el ${formattedDateWithYear}.`,
-    speechText: `Tu próximo día de pico y placa es el ${formattedDateWithYear}.`
+    speechText: `Tu próximo día de pico y placa es el ${formattedDateWithYear}.`,
+    nextRestrictionDate: nextDate
   };
 }
 
@@ -201,6 +222,29 @@ function tryAutomaticSpeech() {
   listenStatusButton.classList.remove('hidden');
 }
 
+function toGoogleCalendarUtc(date) {
+  return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+}
+
+function buildGoogleCalendarUrl(date) {
+  const startLocal = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 7, 0, 0);
+  const endLocal = new Date(startLocal.getTime() + 60 * 60 * 1000);
+  const recurrenceUntil = new Date(
+    supportEndDate.getFullYear(), supportEndDate.getMonth(), supportEndDate.getDate(), 23, 59, 59
+  );
+
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: 'Pico y Placa Pasto',
+    dates: `${toGoogleCalendarUtc(startLocal)}/${toGoogleCalendarUtc(endLocal)}`,
+    details: 'Recordatorio de restricción de Pico y Placa en Pasto, Nariño. Verifica siempre las fuentes oficiales vigentes.',
+    location: 'Pasto, Nariño, Colombia',
+    recur: `RRULE:FREQ=WEEKLY;INTERVAL=5;UNTIL=${toGoogleCalendarUtc(recurrenceUntil)}`
+  });
+
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
 function renderDigitGrid() {
   for (let digit = 0; digit <= 9; digit += 1) {
     const digitButton = document.createElement('button');
@@ -232,6 +276,8 @@ function showDashboard(digit, shouldTrySpeech = false) {
   resultMessage.classList.toggle('free', !status.isRestricted);
   nextRestrictionMessage.textContent = status.details;
   currentSpeechText = status.speechText;
+  currentNextRestrictionDate = status.nextRestrictionDate;
+  addCalendarButton.classList.toggle('hidden', !currentNextRestrictionDate);
 
   if (shouldTrySpeech) {
     tryAutomaticSpeech();
@@ -246,6 +292,7 @@ function resetPlateSelection() {
   dashboardScreen.classList.add('hidden');
   selectionScreen.classList.remove('hidden');
   listenStatusButton.classList.add('hidden');
+  addCalendarButton.classList.add('hidden');
 }
 
 function initializeApp() {
@@ -266,12 +313,29 @@ listenStatusButton.addEventListener('click', () => {
   speakStatus();
 });
 
+addCalendarButton.addEventListener('click', () => {
+  if (!currentNextRestrictionDate) {
+    return;
+  }
+
+  const calendarUrl = buildGoogleCalendarUrl(currentNextRestrictionDate);
+  window.open(calendarUrl, '_blank', 'noopener');
+});
+
 changePlateButton.addEventListener('click', resetPlateSelection);
 
 if ('speechSynthesis' in window) {
   window.speechSynthesis.onvoiceschanged = () => {
     getPreferredSpanishVoice();
   };
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch((error) => {
+      console.error('No se pudo registrar el Service Worker:', error);
+    });
+  });
 }
 
 initializeApp();

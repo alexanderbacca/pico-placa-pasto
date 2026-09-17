@@ -173,6 +173,7 @@ body {
 }
 
 .listen-btn,
+.calendar-btn,
 .secondary-btn {
   display: block;
   width: 100%;
@@ -194,6 +195,19 @@ body {
 .listen-btn:hover,
 .listen-btn:focus-visible {
   background: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.calendar-btn {
+  margin-bottom: 0.75rem;
+  border: 0;
+  color: #ffffff;
+  background: var(--color-success);
+}
+
+.calendar-btn:hover,
+.calendar-btn:focus-visible {
+  background: #0f5c30;
   transform: translateY(-1px);
 }
 
