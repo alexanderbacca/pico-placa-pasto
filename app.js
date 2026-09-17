@@ -143,14 +143,13 @@ function buildStatus(digit, date = new Date()) {
   }
 
   const formattedDateWithYear = formatDateInSpanish(nextDate, true);
-  const formattedDateShort = formatDateInSpanish(nextDate);
 
   if (isCarFreeDay(nextDate)) {
     return {
       isRestricted: false,
       message: 'Hoy no tienes pico y placa.',
       details: `El próximo ${formattedDateWithYear} habrá "Día sin carro ni moto" y tampoco podrás circular ese día.`,
-      speechText: `El próximo ${formattedDateShort} habrá Día sin carro ni moto.`
+      speechText: `El próximo ${formattedDateWithYear} habrá Día sin carro ni moto.`
     };
   }
 
@@ -158,7 +157,7 @@ function buildStatus(digit, date = new Date()) {
     isRestricted: false,
     message: 'Hoy no tienes pico y placa.',
     details: `Tu próximo día de pico y placa es el ${formattedDateWithYear}.`,
-    speechText: `Tu próximo día de pico y placa es el ${formattedDateShort}.`
+    speechText: `Tu próximo día de pico y placa es el ${formattedDateWithYear}.`
   };
 }
 
@@ -198,11 +197,6 @@ function speakStatus() {
 }
 
 function tryAutomaticSpeech() {
-  if (!hasUserInteracted) {
-    listenStatusButton.classList.remove('hidden');
-    return;
-  }
-
   speakStatus();
   listenStatusButton.classList.remove('hidden');
 }
