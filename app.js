@@ -1,6 +1,6 @@
 const storageKey = 'picoPlacaLastDigit';
 const millisecondsPerDay = 24 * 60 * 60 * 1000;
-const anchorDate = new Date(2026, 8, 21);
+const anchorDate = new Date(2026, 8, 14);
 
 const restrictionCycles = [
   [[8, 9], [0, 1], [2, 3], [4, 5], [6, 7]],
@@ -9,6 +9,11 @@ const restrictionCycles = [
   [[4, 5], [6, 7], [8, 9], [0, 1], [2, 3]],
   [[6, 7], [8, 9], [0, 1], [2, 3], [4, 5]]
 ];
+
+const carFreeDays = new Set([
+  '2026-09-24',
+  '2026-12-28'
+]);
 
 const monthNames = [
   'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
@@ -31,6 +36,18 @@ function getLocalStartOfDay(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
+function getDateKey(date) {
+  const localDate = getLocalStartOfDay(date);
+  const year = localDate.getFullYear();
+  const month = String(localDate.getMonth() + 1).padStart(2, '0');
+  const day = String(localDate.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function isCarFreeDay(date) {
+  return carFreeDays.has(getDateKey(date));
+}
+
 function getMondayOfWeek(date) {
   const localDate = getLocalStartOfDay(date);
   const weekDay = localDate.getDay();
@@ -46,6 +63,10 @@ function getCycleIndex(date) {
 }
 
 function getRestrictedDigits(date) {
+  if (isCarFreeDay(date)) {
+    return [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+  }
+
   const weekDay = getLocalStartOfDay(date).getDay();
 
   if (weekDay === 0 || weekDay === 6) {
@@ -82,6 +103,15 @@ function formatDateInSpanish(date, includeYear = false) {
 }
 
 function buildStatus(digit, date = new Date()) {
+  if (isCarFreeDay(date)) {
+    return {
+      isRestricted: true,
+      message: 'Día sin carro ni moto.',
+      details: 'La restricción aplica para todos los dígitos de placa.',
+      speechText: 'Hoy es Día sin carro ni moto.'
+    };
+  }
+
   if (isPlateRestrictedOnDate(digit, date)) {
     return {
       isRestricted: true,
