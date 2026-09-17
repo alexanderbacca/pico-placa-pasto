@@ -37,8 +37,15 @@
       </div>
 
       <button id="listen-status-btn" class="listen-btn hidden" type="button">🔊 Escuchar estado</button>
-      <button id="add-calendar-btn" class="calendar-btn hidden" type="button">📅 Añadir a Google Calendar</button>
+      <button id="add-calendar-btn" class="calendar-btn hidden" type="button">📅 Ver fechas para Google Calendar</button>
       <button id="change-plate-btn" class="secondary-btn" type="button">Cambiar Placa</button>
+    </section>
+
+    <section id="calendar-screen" class="screen hidden" aria-live="polite">
+      <h2>Fechas para Google Calendar</h2>
+      <p class="subtitle">Añade cada fecha por separado, ya que el día de la semana cambia cada semana.</p>
+      <div id="calendar-dates-list" class="calendar-dates-list"></div>
+      <button id="calendar-back-btn" class="secondary-btn" type="button">Volver</button>
     </section>
   </main>
 

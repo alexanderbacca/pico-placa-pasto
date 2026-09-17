@@ -30,10 +30,14 @@ const nextRestrictionMessage = document.getElementById('next-restriction-message
 const listenStatusButton = document.getElementById('listen-status-btn');
 const addCalendarButton = document.getElementById('add-calendar-btn');
 const changePlateButton = document.getElementById('change-plate-btn');
+const calendarScreen = document.getElementById('calendar-screen');
+const calendarDatesList = document.getElementById('calendar-dates-list');
+const calendarBackButton = document.getElementById('calendar-back-btn');
 
 let currentSpeechText = '';
 let hasUserInteracted = false;
 let currentNextRestrictionDate = null;
+let currentDigit = null;
 
 function getLocalStartOfDay(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -226,23 +230,89 @@ function toGoogleCalendarUtc(date) {
   return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 }
 
-function buildGoogleCalendarUrl(date) {
+function getUpcomingRestrictionDates(digit) {
+  const dates = [];
+  const candidateDate = getLocalStartOfDay(new Date());
+  candidateDate.setDate(candidateDate.getDate() + 1);
+
+  while (candidateDate <= supportEndDate) {
+    if (isPlateRestrictedOnDate(digit, candidateDate)) {
+      dates.push(new Date(candidateDate));
+    }
+
+    candidateDate.setDate(candidateDate.getDate() + 1);
+  }
+
+  return dates;
+}
+
+function buildSingleEventGoogleCalendarUrl(date) {
   const startLocal = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 7, 0, 0);
   const endLocal = new Date(startLocal.getTime() + 60 * 60 * 1000);
-  const recurrenceUntil = new Date(
-    supportEndDate.getFullYear(), supportEndDate.getMonth(), supportEndDate.getDate(), 23, 59, 59
-  );
+  const isSpecialDay = isCarFreeDay(date);
 
   const params = new URLSearchParams({
     action: 'TEMPLATE',
-    text: 'Pico y Placa Pasto',
+    text: isSpecialDay ? 'Día sin carro ni moto - Pasto' : 'Pico y Placa Pasto',
     dates: `${toGoogleCalendarUtc(startLocal)}/${toGoogleCalendarUtc(endLocal)}`,
-    details: 'Recordatorio de restricción de Pico y Placa en Pasto, Nariño. Verifica siempre las fuentes oficiales vigentes.',
-    location: 'Pasto, Nariño, Colombia',
-    recur: `RRULE:FREQ=WEEKLY;INTERVAL=5;UNTIL=${toGoogleCalendarUtc(recurrenceUntil)}`
+    details: isSpecialDay
+      ? 'Jornada de Día sin carro ni moto en Pasto, Nariño. Verifica siempre las fuentes oficiales vigentes.'
+      : 'Recordatorio de restricción de Pico y Placa en Pasto, Nariño. Verifica siempre las fuentes oficiales vigentes.',
+    location: 'Pasto, Nariño, Colombia'
   });
 
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+function renderCalendarDatesList(digit) {
+  const dates = getUpcomingRestrictionDates(digit);
+  calendarDatesList.innerHTML = '';
+
+  if (dates.length === 0) {
+    const emptyMessage = document.createElement('p');
+    emptyMessage.className = 'calendar-empty';
+    emptyMessage.textContent = 'No hay más fechas de restricción registradas hasta el 31 de diciembre de 2026.';
+    calendarDatesList.appendChild(emptyMessage);
+    return;
+  }
+
+  dates.forEach((date) => {
+    const item = document.createElement('div');
+    item.className = 'calendar-date-item';
+
+    const label = document.createElement('span');
+    label.className = 'calendar-date-label';
+    label.textContent = isCarFreeDay(date)
+      ? `${formatDateInSpanish(date, true)} (Día sin carro ni moto)`
+      : formatDateInSpanish(date, true);
+
+    const addButton = document.createElement('button');
+    addButton.type = 'button';
+    addButton.className = 'calendar-date-add-btn';
+    addButton.textContent = 'Añadir';
+    addButton.addEventListener('click', () => {
+      window.open(buildSingleEventGoogleCalendarUrl(date), '_blank', 'noopener');
+    });
+
+    item.appendChild(label);
+    item.appendChild(addButton);
+    calendarDatesList.appendChild(item);
+  });
+}
+
+function showCalendarScreen() {
+  if (currentDigit === null) {
+    return;
+  }
+
+  renderCalendarDatesList(currentDigit);
+  dashboardScreen.classList.add('hidden');
+  calendarScreen.classList.remove('hidden');
+}
+
+function hideCalendarScreen() {
+  calendarScreen.classList.add('hidden');
+  dashboardScreen.classList.remove('hidden');
 }
 
 function renderDigitGrid() {
@@ -269,6 +339,7 @@ function showDashboard(digit, shouldTrySpeech = false) {
   const status = buildStatus(digit);
 
   selectionScreen.classList.add('hidden');
+  calendarScreen.classList.add('hidden');
   dashboardScreen.classList.remove('hidden');
   selectedDigitDisplay.textContent = String(digit);
   resultMessage.textContent = status.message;
@@ -277,7 +348,8 @@ function showDashboard(digit, shouldTrySpeech = false) {
   nextRestrictionMessage.textContent = status.details;
   currentSpeechText = status.speechText;
   currentNextRestrictionDate = status.nextRestrictionDate;
-  addCalendarButton.classList.toggle('hidden', !currentNextRestrictionDate);
+  currentDigit = digit;
+  addCalendarButton.classList.toggle('hidden', Boolean(status.isOutOfRange));
 
   if (shouldTrySpeech) {
     tryAutomaticSpeech();
@@ -289,7 +361,9 @@ function showDashboard(digit, shouldTrySpeech = false) {
 function resetPlateSelection() {
   window.speechSynthesis?.cancel();
   localStorage.removeItem(storageKey);
+  currentDigit = null;
   dashboardScreen.classList.add('hidden');
+  calendarScreen.classList.add('hidden');
   selectionScreen.classList.remove('hidden');
   listenStatusButton.classList.add('hidden');
   addCalendarButton.classList.add('hidden');
@@ -314,12 +388,11 @@ listenStatusButton.addEventListener('click', () => {
 });
 
 addCalendarButton.addEventListener('click', () => {
-  if (!currentNextRestrictionDate) {
-    return;
-  }
+  showCalendarScreen();
+});
 
-  const calendarUrl = buildGoogleCalendarUrl(currentNextRestrictionDate);
-  window.open(calendarUrl, '_blank', 'noopener');
+calendarBackButton.addEventListener('click', () => {
+  hideCalendarScreen();
 });
 
 changePlateButton.addEventListener('click', resetPlateSelection);
