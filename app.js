@@ -96,10 +96,20 @@ function findNextRestrictionDate(digit, startDate) {
   return null;
 }
 
+const dayNames = [
+  'domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'
+];
+
 function formatDateInSpanish(date, includeYear = false) {
   const day = date.getDate();
   const month = monthNames[date.getMonth()];
-  return includeYear ? `${day} de ${month} de ${date.getFullYear()}` : `${day} de ${month}`;
+
+  if (includeYear) {
+    const dayName = dayNames[date.getDay()];
+    return `${dayName} ${day} de ${month} de ${date.getFullYear()}`;
+  }
+
+  return `${day} de ${month}`;
 }
 
 function buildStatus(digit, date = new Date()) {
@@ -122,13 +132,33 @@ function buildStatus(digit, date = new Date()) {
   }
 
   const nextDate = findNextRestrictionDate(digit, date);
-  const formattedDate = nextDate ? formatDateInSpanish(nextDate) : '';
+
+  if (!nextDate) {
+    return {
+      isRestricted: false,
+      message: 'Hoy no tienes pico y placa.',
+      details: '',
+      speechText: 'Hoy no tienes pico y placa.'
+    };
+  }
+
+  const formattedDateWithYear = formatDateInSpanish(nextDate, true);
+  const formattedDateShort = formatDateInSpanish(nextDate);
+
+  if (isCarFreeDay(nextDate)) {
+    return {
+      isRestricted: false,
+      message: 'Hoy no tienes pico y placa.',
+      details: `El próximo ${formattedDateWithYear} habrá "Día sin carro ni moto" y tampoco podrás circular ese día.`,
+      speechText: `El próximo ${formattedDateShort} habrá Día sin carro ni moto.`
+    };
+  }
 
   return {
     isRestricted: false,
     message: 'Hoy no tienes pico y placa.',
-    details: nextDate ? `Tu próximo día de pico y placa es el ${formatDateInSpanish(nextDate, true)}.` : '',
-    speechText: nextDate ? `Tu próximo día de pico y placa es el ${formattedDate}.` : 'Hoy no tienes pico y placa.'
+    details: `Tu próximo día de pico y placa es el ${formattedDateWithYear}.`,
+    speechText: `Tu próximo día de pico y placa es el ${formattedDateShort}.`
   };
 }
 
