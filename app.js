@@ -32,6 +32,7 @@ const addCalendarButton = document.getElementById('add-calendar-btn');
 const changePlateButton = document.getElementById('change-plate-btn');
 const calendarScreen = document.getElementById('calendar-screen');
 const calendarDatesList = document.getElementById('calendar-dates-list');
+const addCarFreeDaysButton = document.getElementById('add-carfree-btn');
 const calendarBackButton = document.getElementById('calendar-back-btn');
 
 let currentSpeechText = '';
@@ -249,26 +250,70 @@ function getUpcomingRestrictionDates(digit) {
 function buildSingleEventGoogleCalendarUrl(date) {
   const startLocal = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 7, 0, 0);
   const endLocal = new Date(startLocal.getTime() + 60 * 60 * 1000);
-  const isSpecialDay = isCarFreeDay(date);
 
   const params = new URLSearchParams({
     action: 'TEMPLATE',
-    text: isSpecialDay ? 'Día sin carro ni moto - Pasto' : 'Pico y Placa Pasto',
+    text: 'Día sin carro ni moto - Pasto',
     dates: `${toGoogleCalendarUtc(startLocal)}/${toGoogleCalendarUtc(endLocal)}`,
-    details: isSpecialDay
-      ? 'Jornada de Día sin carro ni moto en Pasto, Nariño. Verifica siempre las fuentes oficiales vigentes.'
-      : 'Recordatorio de restricción de Pico y Placa en Pasto, Nariño. Verifica siempre las fuentes oficiales vigentes.',
+    details: 'Jornada de Día sin carro ni moto en Pasto, Nariño. Verifica siempre las fuentes oficiales vigentes.',
     location: 'Pasto, Nariño, Colombia'
   });
 
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
+function buildWeekdayRecurringGoogleCalendarUrl(firstDate) {
+  const startLocal = new Date(firstDate.getFullYear(), firstDate.getMonth(), firstDate.getDate(), 7, 0, 0);
+  const endLocal = new Date(startLocal.getTime() + 60 * 60 * 1000);
+  const recurrenceUntil = new Date(
+    supportEndDate.getFullYear(), supportEndDate.getMonth(), supportEndDate.getDate(), 23, 59, 59
+  );
+
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: 'Pico y Placa Pasto',
+    dates: `${toGoogleCalendarUtc(startLocal)}/${toGoogleCalendarUtc(endLocal)}`,
+    details: 'Recordatorio de restricción de Pico y Placa en Pasto, Nariño. Verifica siempre las fuentes oficiales vigentes.',
+    location: 'Pasto, Nariño, Colombia',
+    recur: `RRULE:FREQ=WEEKLY;INTERVAL=5;UNTIL=${toGoogleCalendarUtc(recurrenceUntil)}`
+  });
+
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+function getUpcomingRestrictionsByWeekday(digit) {
+  const dates = getUpcomingRestrictionDates(digit).filter((date) => !isCarFreeDay(date));
+  const firstDateByWeekday = new Map();
+
+  dates.forEach((date) => {
+    const weekday = date.getDay();
+    if (!firstDateByWeekday.has(weekday)) {
+      firstDateByWeekday.set(weekday, date);
+    }
+  });
+
+  return Array.from(firstDateByWeekday.entries())
+    .sort((a, b) => a[1] - b[1])
+    .map(([weekday, firstDate]) => ({ weekday, firstDate }));
+}
+
+function getUpcomingCarFreeDays() {
+  const today = getLocalStartOfDay(new Date());
+
+  return Array.from(carFreeDays)
+    .map((key) => {
+      const [year, month, day] = key.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    })
+    .filter((date) => date >= today && date <= supportEndDate)
+    .sort((a, b) => a - b);
+}
+
 function renderCalendarDatesList(digit) {
-  const dates = getUpcomingRestrictionDates(digit);
+  const weekdayGroups = getUpcomingRestrictionsByWeekday(digit);
   calendarDatesList.innerHTML = '';
 
-  if (dates.length === 0) {
+  if (weekdayGroups.length === 0) {
     const emptyMessage = document.createElement('p');
     emptyMessage.className = 'calendar-empty';
     emptyMessage.textContent = 'No hay más fechas de restricción registradas hasta el 31 de diciembre de 2026.';
@@ -276,22 +321,20 @@ function renderCalendarDatesList(digit) {
     return;
   }
 
-  dates.forEach((date) => {
+  weekdayGroups.forEach(({ weekday, firstDate }) => {
     const item = document.createElement('div');
     item.className = 'calendar-date-item';
 
     const label = document.createElement('span');
     label.className = 'calendar-date-label';
-    label.textContent = isCarFreeDay(date)
-      ? `${formatDateInSpanish(date, true)} (Día sin carro ni moto)`
-      : formatDateInSpanish(date, true);
+    label.textContent = `Todos los ${dayNames[weekday]} (próximo: ${formatDateInSpanish(firstDate, true)})`;
 
     const addButton = document.createElement('button');
     addButton.type = 'button';
     addButton.className = 'calendar-date-add-btn';
     addButton.textContent = 'Añadir';
     addButton.addEventListener('click', () => {
-      window.open(buildSingleEventGoogleCalendarUrl(date), '_blank', 'noopener');
+      window.open(buildWeekdayRecurringGoogleCalendarUrl(firstDate), '_blank', 'noopener');
     });
 
     item.appendChild(label);
@@ -389,6 +432,12 @@ listenStatusButton.addEventListener('click', () => {
 
 addCalendarButton.addEventListener('click', () => {
   showCalendarScreen();
+});
+
+addCarFreeDaysButton.addEventListener('click', () => {
+  getUpcomingCarFreeDays().forEach((date) => {
+    window.open(buildSingleEventGoogleCalendarUrl(date), '_blank', 'noopener');
+  });
 });
 
 calendarBackButton.addEventListener('click', () => {
