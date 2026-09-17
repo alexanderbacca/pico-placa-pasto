@@ -1,6 +1,6 @@
 const storageKey = 'picoPlacaLastDigit';
 const millisecondsPerDay = 24 * 60 * 60 * 1000;
-const anchorDate = new Date(2026, 8, 14);
+const anchorDate = new Date(2026, 8, 21);
 
 const restrictionCycles = [
   [[8, 9], [0, 1], [2, 3], [4, 5], [6, 7]],
@@ -157,6 +157,7 @@ function speakStatus() {
   const voice = getPreferredSpanishVoice();
   utterance.lang = voice ? voice.lang : 'es-CO';
   utterance.rate = 1;
+  utterance.volume = 1;
 
   if (voice) {
     utterance.voice = voice;
@@ -228,7 +229,7 @@ function initializeApp() {
   renderDigitGrid();
 
   if (savedDigit !== null && /^[0-9]$/.test(savedDigit)) {
-    showDashboard(Number(savedDigit));
+    showDashboard(Number(savedDigit), true);
     return;
   }
 
