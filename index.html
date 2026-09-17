@@ -25,10 +25,14 @@
         <p class="plate-summary-label">Tu placa termina en</p>
         <div id="selected-digit-display" class="selected-digit-display">-</div>
       </div>
+
       <div class="result-card">
         <p class="result-status">Estado de hoy</p>
-        <p id="result-message" class="result-message">Aquí se mostrará si hoy tienes restricción.</p>
+        <p id="result-message" class="result-message"></p>
+        <p id="next-restriction-message" class="next-restriction-message"></p>
       </div>
+
+      <button id="listen-status-btn" class="listen-btn hidden" type="button">🔊 Escuchar estado</button>
       <button id="change-plate-btn" class="secondary-btn" type="button">Cambiar Placa</button>
     </section>
   </main>
