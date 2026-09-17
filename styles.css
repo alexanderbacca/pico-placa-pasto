@@ -1,0 +1,223 @@
+/* ==========================================================================
+   Pico&Placa Pasto - Mobile-first stylesheet
+   ========================================================================== */
+
+:root {
+  --color-primary: #1e3a8a;
+  --color-primary-light: #3b82f6;
+  --color-accent: #f59e0b;
+  --color-bg: #f4f6fb;
+  --color-surface: #ffffff;
+  --color-text: #1f2937;
+  --color-text-muted: #6b7280;
+  --color-danger: #dc2626;
+  --color-success: #16a34a;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --shadow-soft: 0 4px 16px rgba(30, 58, 138, 0.08);
+  --transition-fast: 0.18s ease;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ---------------------------- Header ---------------------------- */
+
+.app-header {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+  color: #fff;
+  padding: 1.25rem 1rem;
+  text-align: center;
+  box-shadow: var(--shadow-soft);
+}
+
+.app-header h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.app-header h1 span {
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+/* ---------------------------- Layout ---------------------------- */
+
+.app-container {
+  flex: 1;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 2rem;
+}
+
+.screen {
+  animation: fadeIn 0.25s ease;
+}
+
+.screen.hidden {
+  display: none;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------------------------- Selection screen ---------------------------- */
+
+#selection-screen h2 {
+  font-size: 1.15rem;
+  text-align: center;
+  margin-bottom: 0.4rem;
+}
+
+.subtitle {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.digit-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.75rem;
+}
+
+.digit-btn {
+  aspect-ratio: 1 / 1;
+  border: none;
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  color: var(--color-primary);
+  font-size: 1.4rem;
+  font-weight: 700;
+  box-shadow: var(--shadow-soft);
+  cursor: pointer;
+  transition: transform var(--transition-fast), background-color var(--transition-fast), color var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.digit-btn:hover,
+.digit-btn:focus-visible {
+  background-color: var(--color-primary);
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+.digit-btn:active {
+  transform: scale(0.96);
+}
+
+/* ---------------------------- Dashboard screen ---------------------------- */
+
+.plate-summary-card {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+  color: #fff;
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  text-align: center;
+  box-shadow: var(--shadow-soft);
+  margin-bottom: 1.25rem;
+}
+
+.plate-summary-label {
+  font-size: 0.85rem;
+  opacity: 0.85;
+  margin-bottom: 0.25rem;
+}
+
+.selected-digit-display {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.result-card {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  text-align: center;
+  box-shadow: var(--shadow-soft);
+  margin-bottom: 1.5rem;
+}
+
+.result-status {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+}
+
+.result-message {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.result-message.restricted {
+  color: var(--color-danger);
+}
+
+.result-message.free {
+  color: var(--color-success);
+}
+
+/* ---------------------------- Buttons ---------------------------- */
+
+.secondary-btn {
+  display: block;
+  width: 100%;
+  padding: 0.85rem;
+  border: 2px solid var(--color-primary);
+  background-color: transparent;
+  color: var(--color-primary);
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.secondary-btn:hover,
+.secondary-btn:focus-visible {
+  background-color: var(--color-primary);
+  color: #fff;
+}
+
+/* ---------------------------- Footer ---------------------------- */
+
+.app-footer {
+  text-align: center;
+  padding: 1rem;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+/* ---------------------------- Responsive tweaks ---------------------------- */
+
+@media (min-width: 480px) {
+  .digit-grid {
+    gap: 1rem;
+  }
+}
