@@ -1,7 +1,42 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es-CO">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Pico&amp;Placa Pasto</title>
-  <meta name="description" content="Consulta rápida del Pico y Placa en Pasto, Nariñ»»»
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1e3a8a">
+  <meta name="description" content="Consulta rápida del Pico y Placa en Pasto, Nariño">
+  <title>Pico&Placa Pasto</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <h1>🚗 Pico&amp;Placa <span>Pasto</span></h1>
+  </header>
+
+  <main class="app-container">
+    <section id="selection-screen" class="screen">
+      <h2>Selecciona el último dígito de tu placa</h2>
+      <p class="subtitle">Este dato se guardará en tu dispositivo para futuras consultas.</p>
+      <div id="digit-grid" class="digit-grid" aria-label="Dígitos de placa"></div>
+    </section>
+
+    <section id="dashboard-screen" class="screen hidden" aria-live="polite">
+      <div class="plate-summary-card">
+        <p class="plate-summary-label">Tu placa termina en</p>
+        <div id="selected-digit-display" class="selected-digit-display">-</div>
+      </div>
+      <div class="result-card">
+        <p class="result-status">Estado de hoy</p>
+        <p id="result-message" class="result-message">Aquí se mostrará si hoy tienes restricción.</p>
+      </div>
+      <button id="change-plate-btn" class="secondary-btn" type="button">Cambiar Placa</button>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>Hecho con ❤️ en Pasto, Nariño</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
