@@ -1,7 +1,8 @@
-const CACHE_NAME = 'pico-placa-pasto-v1';
+const CACHE_NAME = 'pico-placa-pasto-v2';
 const APP_SHELL = [
   './',
   './index.html',
+  './info.html',
   './styles.css',
   './app.js',
   './manifest.json'
